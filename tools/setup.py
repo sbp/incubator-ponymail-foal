@@ -452,7 +452,7 @@ database:
   server: %s      # The hostname of the ElasticSearch database
   port: %u             # ES Port
   secure: %s          # Whether TLS is enabled on ES
-  url_prefix: ~          # URL prefix, if proxying to ES
+  url_prefix: %s          # URL prefix, if proxying to ES
   db_prefix: %s    # DB prefix, usually 'ponymail'
   max_hits: 15000        # Maximum number of emails to process in a search
 
@@ -476,7 +476,7 @@ oauth:
   github_client_id:     ~
   github_client_secret: ~
 
-""" % (hostname, port, "true" if secure else "false", dbname, "true" if wce else "false", mlserver, mldom))
+""" % (hostname, port, "true" if secure else "false", urlPrefix or "~", dbname, "true" if wce else "false", mlserver, mldom))
 
 
 print("All done, Pony Mail should...work now :)")
