@@ -158,6 +158,12 @@ parser.add_argument(
     help="Don't create ElasticSearch indices, assume they exist",
 )
 parser.add_argument(
+    "--secure",
+    dest="secure",
+    action="store_true",
+    help="Use SSL for ElasticSearch connections",
+)
+parser.add_argument(
     "--nocloud", dest="nwc", action="store_true", help="Do not enable word cloud"
 )
 parser.add_argument(
@@ -192,6 +198,7 @@ if args.defaults:
     shards = 3
     replicas = 1
     genname = "dkim"
+    secure = False
     urlPrefix = ""
     nonce = None
 
@@ -229,6 +236,8 @@ if args.generator:
         sys.exit(-1)
 if args.generator and any(x == "dkim" for x in args.generator.split(' ')) and args.nonce is not None:
     nonce = args.nonce
+if args.secure:
+    secure = args.secure
 
 if not hostname:
     hostname = input("What is the hostname of the ElasticSearch server? [localhost]: ")
@@ -323,7 +332,7 @@ print("Okay, I got all I need, setting up Pony Mail...")
 
 # we need to connect to database to determine the engine version
 es = Elasticsearch(
-    [{"host": hostname, "port": port, "use_ssl": False, "url_prefix": urlPrefix}],
+    [{"host": hostname, "port": port, "use_ssl": secure, "url_prefix": urlPrefix}],
     max_retries=5,
     retry_on_timeout=True,
 )
@@ -401,7 +410,7 @@ elasticsearch:
     hostname:               %s
     dbname:                 %s
     port:                   %u
-    ssl:                    false
+    ssl:                    %s
     #uri:                   url_prefix
     #user:                  username
     #password:              password
@@ -417,7 +426,7 @@ debug:
     #cropout:               string to crop from list-id
 
             """
-        % (hostname, dbname, port, genname, nonce or "~")
+        % (hostname, dbname, port, "true" if secure else "false", genname, nonce or "~")
     )
 
 print("Copying sample JS config to config.js (if needed)...")
@@ -442,7 +451,7 @@ server:
 database:
   server: %s      # The hostname of the ElasticSearch database
   port: %u             # ES Port
-  secure: false          # Whether TLS is enabled on ES
+  secure: %s          # Whether TLS is enabled on ES
   url_prefix: ~          # URL prefix, if proxying to ES
   db_prefix: %s    # DB prefix, usually 'ponymail'
   max_hits: 15000        # Maximum number of emails to process in a search
@@ -467,7 +476,7 @@ oauth:
   github_client_id:     ~
   github_client_secret: ~
 
-""" % (hostname,  port, dbname, "true" if wce else "false", mlserver, mldom))
+""" % (hostname, port, "true" if secure else "false", dbname, "true" if wce else "false", mlserver, mldom))
 
 
 print("All done, Pony Mail should...work now :)")
